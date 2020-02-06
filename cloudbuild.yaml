@@ -1,0 +1,60 @@
+steps:
+- name: 'gcr.io/cloud-builders/docker'
+  args: ['build', '-t', 'gcr.io/$PROJECT_ID/gcp-demo-app', '.']
+  env:
+    - "PROJECT=$PROJECT_ID"
+# Push docker image to container registry
+- id: 'Docker push'
+  name: 'gcr.io/cloud-builders/docker'
+  args: ['push','gcr.io/$PROJECT_ID/gcp-demo-app']
+  env:
+    - "PROJECT=$PROJECT_ID"
+
+- id: 'Terraform init'
+  name: 'hashicorp/terraform:0.12.20'
+  entrypoint: 'sh'
+  args: 
+  - '-c'
+  - |
+      cd terraform
+      terraform init
+# [START tf-plan]
+- id: 'Plan'
+  name: 'hashicorp/terraform:0.12.20'
+  entrypoint: 'sh'
+  args: 
+  - '-c'
+  - | 
+      cd terraform
+      terraform plan
+# [END tf-plan]
+
+# [START tf-apply]
+- id: 'Apply'
+  name: 'hashicorp/terraform:0.12.20'
+  entrypoint: 'sh'
+  args: 
+  - '-c'
+  - | 
+      cd terraform
+      terraform apply -auto-approve
+# [END tf-apply]   
+
+# [START tf-destroy]
+# - id: 'tf destroy'
+#   name: 'hashicorp/terraform:0.12.20'
+#   entrypoint: 'sh'
+#   args: 
+#   - '-c'
+#   - | 
+#       cd terraform
+#       terraform destroy
+# [END tf-apply]  
+
+# env_variables:
+#     PUBSUB_TOPIC: storage_events
+#     # This token is used to verify that requests originate from your
+#     PUBSUB_VERIFICATION_TOKEN: 1234abc
+
+images:
+- 'gcr.io/$PROJECT_ID/gcp-demo-app'
