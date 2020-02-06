@@ -55,10 +55,14 @@ const checkDataStore = async (messageId, objectURL) => {
     return false;
   }
 }
+
+// Invoke this function when Storage Notification event is OBJECT_DELETE
+//This function will delete the data from storage bucket
 const deleteFromSecondBucket = (objectExists, file) => {
   if(!objectExists) return 'No data found';
   const secondBucket = storage.bucket(gcSecondBucket);
   secondBucket.file(file.name).delete();
+  // TODO:: Delete from datastore to keep it consistent 
   return;
 }
 
@@ -74,6 +78,7 @@ const uploadInSecondBucket = async (objectExists, file) => {
   } catch (err) {
     throw new Error(`File download failed: ${err}`);
   }
+  //Upload the file into Second bucket
   try {
       secondBucket.upload(tempLocalPath, {destination: file.name});
       const gcsPath = `gs://${gcSecondBucket}/${file.name}`;
@@ -83,6 +88,7 @@ const uploadInSecondBucket = async (objectExists, file) => {
     return err;
   }
   //Delete temp file from system
+  // TODO:: Delete through finally block
   const unlink = promisify(fs.unlink);
   return unlink(tempLocalPath);
 }
@@ -92,7 +98,6 @@ const handleStorageNotification = async (attributes, message, eventData) => {
   const file = storage.bucket(eventData.bucket).file(eventData.name);
   // check datastore for the duplicate 
   let objectExists = await checkDataStore(message.messageId, eventData.mediaLink);
-  console.log('objectExists====', objectExists)
   switch(attributes.eventType) {
     case 'OBJECT_FINALIZE': await uploadInSecondBucket(objectExists, file);
       break;
@@ -103,6 +108,7 @@ const handleStorageNotification = async (attributes, message, eventData) => {
   }
 } 
 
+//Limitation on file size
 const Multer = require('multer');
 const multer = Multer({
   storage: Multer.MemoryStorage,

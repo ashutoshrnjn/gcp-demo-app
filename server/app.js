@@ -1,11 +1,11 @@
-var express = require('express');
-var app = express();
+const express = require('express');
+const app = express();
 const config = require('./config');
 
 app.use('/', require('./api'));
 
 
-var server = app.listen(config.get('PORT'), function () {
+const server = app.listen(config.get('PORT'), function () {
    var host = server.address().address
    var port = server.address().port
    

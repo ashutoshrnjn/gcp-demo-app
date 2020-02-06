@@ -1,12 +1,10 @@
 const express = require('express');
 const bodyParser = require('body-parser');
+const router = express.Router();
 
-const datastore = require('../gcp/datastore');
 const imageUpload = require('../gcp/cloudstorage');
 
-const router = express.Router();
 router.use(bodyParser.json());
-
 
 router.get('/', function (req, res) {
   res.send('Hello World');
@@ -16,7 +14,7 @@ router.get('/', function (req, res) {
  * This is a push subscription sent from cloud run. 
  */
 router.post('/', (req, res, next) => {
-  console.log('POST: +++++Inside push back+++++');
+  console.log('Push Subscription: Event by cloud run');
   if (!req.body) {
     const msg = 'no Pub/Sub message received';
     console.error(`error: ${msg}`);
@@ -39,14 +37,12 @@ router.post('/', (req, res, next) => {
   } catch (err) {
     return err;
   }
-  console.log('====Event data', eventData);
-  //Store the message in second-bucket
   try {
     //logic to handle the seond-bucket
     const attributes = req.body.message.attributes;
     const message = req.body.message;
-    console.log('Event type ------: ', attributes.eventType)
-    //Upload in second bucket
+    console.log('Event type: ', attributes.eventType)
+    //Handle Storage Notification events
     imageUpload.handleStorageNotification(attributes, message, eventData);
     //acknowledge the message
     res.status(204).send();
@@ -66,7 +62,7 @@ router.post('/storage/add',
     if (req.file && req.file.cloudStoragePublicUrl) {
       data.imageUrl = req.file.cloudStoragePublicUrl;
     }
-    // Save the data to the database.
+    // Send public url back to client. //depends on use case
     res.send(data);
   });
 
